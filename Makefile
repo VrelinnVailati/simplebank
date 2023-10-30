@@ -29,3 +29,7 @@ initialize-db:
 	$(MAKE) create-db
 	timeout 5
 	$(MAKE) migrate-up
+
+.PHONY: test
+test:
+	go test -v -cover ./...
