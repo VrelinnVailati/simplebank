@@ -6,6 +6,7 @@ import (
 	db "github.com/VrelinnVailati/simplebank/db/sqlc"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type createAccountRequest struct {
@@ -84,6 +85,42 @@ func (s *Server) listAccounts(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, accs)
+}
+
+type updateAccountByIdRequest struct {
+	Balance int64 `json:"balance" binding:"required"`
+}
+
+func (s *Server) updateAccountById(ctx *gin.Context) {
+	sId := ctx.Param("id")
+	if sId == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "Please provide an ID"})
+		return
+	}
+
+	id, err := strconv.ParseInt(sId, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "Provide a valid ID"})
+		return
+	}
+
+	var req updateAccountByIdRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	arg := db.UpdateAccountParams{
+		ID:      id,
+		Balance: req.Balance,
+	}
+
+	acc, err := s.store.UpdateAccount(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+	}
+
+	ctx.JSON(http.StatusOK, acc)
 }
 
 // TODO: Add REST handlers for updating and deleting accounts
